@@ -1,0 +1,17 @@
+{
+  "name": "moviebox-api-server",
+  "version": "1.0.0",
+  "description": "HTTP REST API server for the MovieBox v3 Android backend",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
