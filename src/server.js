@@ -50,6 +50,7 @@ const app = express();
 const client = new MovieBoxClient();
 
 app.use(express.json());
+app.use(express.static("public"));
 
 // ---------------------------------------------------------------------------
 // Response helpers
@@ -469,7 +470,8 @@ app.get("/subtitles/proxy", async (req, res) => {
   } catch {
     return res.status(400).json({ ok: false, error: "Invalid url" });
   }
-  if (!parsed.hostname.endsWith("hakunaymatata.com")) {
+  const allowed = ["hakunaymatata.com", "aoneroom.com", "pbcdn.aoneroom.com"];
+  if (!allowed.some(d => parsed.hostname === d || parsed.hostname.endsWith("." + d))) {
     return res
       .status(403)
       .json({ ok: false, error: "URL not from an allowed subtitle CDN" });
@@ -479,10 +481,25 @@ app.get("/subtitles/proxy", async (req, res) => {
       headers: { "User-Agent": DOWNLOAD_REQUEST_HEADERS["User-Agent"] },
     });
     res.status(upstream.status);
-    const ct = upstream.headers.get("content-type");
-    if (ct) res.setHeader("content-type", ct);
     res.setHeader("access-control-allow-origin", "*");
-    if (upstream.body) {
+
+    const isSrt = url.match(/\.srt($|[?#])/i) ||
+      (upstream.headers.get("content-type") || "").includes("text/plain");
+
+    if (isSrt && upstream.body) {
+      // SRT → WebVTT conversion
+      const text = await upstream.text();
+      const vtt =
+        "WEBVTT\n\n" +
+        text
+          // Replace SRT comma decimal separator with dot
+          .replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, "$1.$2");
+      res.setHeader("content-type", "text/vtt; charset=utf-8");
+      res.setHeader("content-length", Buffer.byteLength(vtt));
+      res.end(vtt);
+    } else if (upstream.body) {
+      const ct = upstream.headers.get("content-type");
+      if (ct) res.setHeader("content-type", ct);
       Readable.fromWeb(upstream.body).pipe(res);
     } else {
       res.end();
