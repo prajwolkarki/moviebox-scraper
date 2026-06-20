@@ -445,6 +445,54 @@ app.get("/dubs/:subject_id", async (req, res) => {
 // --------------------------------------------------------------------------
 
 /**
+ * GET /subtitles/proxy?url=<encoded-subtitle-url>
+ * Fetches a subtitle file from the CDN and streams it back.
+ * Useful for bypassing CORS restrictions in browser-based players.
+ *
+ * The subtitle CDN (cacdn.hakunaymatata.com) uses signed CloudFront URLs
+ * that carry their own auth – do NOT forward any cookies.
+ *
+ * NOTE: this route MUST be defined before /subtitles/:subject_id so that
+ * Express matches the literal "proxy" path first.
+ */
+app.get("/subtitles/proxy", async (req, res) => {
+  const { url } = req.query;
+  if (!url) {
+    return res
+      .status(400)
+      .json({ ok: false, error: "Missing query param: url" });
+  }
+  // Basic safety check: only allow the known subtitle CDN
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return res.status(400).json({ ok: false, error: "Invalid url" });
+  }
+  if (!parsed.hostname.endsWith("hakunaymatata.com")) {
+    return res
+      .status(403)
+      .json({ ok: false, error: "URL not from an allowed subtitle CDN" });
+  }
+  try {
+    const upstream = await fetch(url, {
+      headers: { "User-Agent": DOWNLOAD_REQUEST_HEADERS["User-Agent"] },
+    });
+    res.status(upstream.status);
+    const ct = upstream.headers.get("content-type");
+    if (ct) res.setHeader("content-type", ct);
+    res.setHeader("access-control-allow-origin", "*");
+    if (upstream.body) {
+      Readable.fromWeb(upstream.body).pipe(res);
+    } else {
+      res.end();
+    }
+  } catch (err) {
+    fail(res, err);
+  }
+});
+
+/**
  * GET /subtitles/:subject_id
  * Returns the list of subtitle language names that are known to exist for
  * this title (taken from the `subtitles` field in item details – no extra
@@ -510,51 +558,6 @@ app.get("/subtitles/:subject_id/:resource_id", async (req, res) => {
       delay: c.delay,
     }));
     ok(res, { subject_id, resource_id, captions });
-  } catch (err) {
-    fail(res, err);
-  }
-});
-
-/**
- * GET /subtitles/proxy?url=<encoded-subtitle-url>
- * Fetches a subtitle file from the CDN and streams it back.
- * Useful for bypassing CORS restrictions in browser-based players.
- *
- * The subtitle CDN (cacdn.hakunaymatata.com) uses signed CloudFront URLs
- * that carry their own auth – do NOT forward any cookies.
- */
-app.get("/subtitles/proxy", async (req, res) => {
-  const { url } = req.query;
-  if (!url) {
-    return res
-      .status(400)
-      .json({ ok: false, error: "Missing query param: url" });
-  }
-  // Basic safety check: only allow the known subtitle CDN
-  let parsed;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return res.status(400).json({ ok: false, error: "Invalid url" });
-  }
-  if (!parsed.hostname.endsWith("hakunaymatata.com")) {
-    return res
-      .status(403)
-      .json({ ok: false, error: "URL not from an allowed subtitle CDN" });
-  }
-  try {
-    const upstream = await fetch(url, {
-      headers: { "User-Agent": DOWNLOAD_REQUEST_HEADERS["User-Agent"] },
-    });
-    res.status(upstream.status);
-    const ct = upstream.headers.get("content-type");
-    if (ct) res.setHeader("content-type", ct);
-    res.setHeader("access-control-allow-origin", "*");
-    if (upstream.body) {
-      Readable.fromWeb(upstream.body).pipe(res);
-    } else {
-      res.end();
-    }
   } catch (err) {
     fail(res, err);
   }
@@ -871,9 +874,27 @@ if (require.main === module) {
     console.log(
       `MovieBox API server running → http://localhost:${SERVER_PORT}`,
     );
-    console.log(
-      "Routes: /home  /movies  /tv-series  /animation  /ranking  /search  /detail/:slug  /watch/:id",
-    );
+    console.log("Available routes:");
+    const routeTable = [
+      ["🏠 Home", "GET /home", "GET /home/sections", "GET /home/section/:name", "GET /home/banner", "GET /home/trending", "GET /home/hot", "GET /home/cinema"],
+      ["🎬 Movies", "GET /movies", "GET /movies/sections", "GET /movies/section/:name"],
+      ["📺 TV Series", "GET /tv-series", "GET /tv-series/sections", "GET /tv-series/section/:name"],
+      ["🎭 Animation", "GET /animation", "GET /animation/sections", "GET /animation/section/:name"],
+      ["🏆 Ranking", "GET /ranking", "GET /ranking/sections", "GET /ranking/section/:name"],
+      ["🔍 Search", "GET /search?q=", "GET /search/suggest?q="],
+      ["📄 Detail", "GET /detail/:slug", "GET /episodes/:slug"],
+      ["🎞️ Stream", "GET /api/stream/:subject_id", "GET /watch/:subject_id"],
+      ["🎬 Play Info", "GET /play-info/:subject_id"],
+      ["🎚️ Resolutions", "GET /resolutions/:subject_id"],
+      ["🎙️ Dubs", "GET /dubs/:subject_id"],
+      ["📝 Subtitles", "GET /subtitles/:subject_id", "GET /subtitles/:subject_id/:resource_id", "GET /subtitles/proxy"],
+    ];
+    for (const [group, ...routes] of routeTable) {
+      console.log(`  ${group}`);
+      for (const route of routes) {
+        console.log(`    ${route}`);
+      }
+    }
   });
 }
 
