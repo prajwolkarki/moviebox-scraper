@@ -775,15 +775,64 @@ function jsonFail(err, status = 500) {
   });
 }
 
+/**
+ * Normalise a raw API item into a card-compatible shape so all section types
+ * produce a consistent { subjectId, title, cover, detailUrl, ... } object.
+ */
+function _normaliseItem(raw) {
+  if (!raw) return null;
+  // Already a proper subject (has cover + title at top level)
+  if (raw.cover || raw.title) return raw;
+  // CUSTOM section item: has image + subjectId, subject may be null
+  const out = { ...raw };
+  if (!out.cover && raw.image && raw.image.url) {
+    out.cover = { url: raw.image.url };
+  }
+  // Use subject data if present and richer
+  if (raw.subject && (raw.subject.title || raw.subject.cover)) {
+    return { ...raw.subject, ...out, cover: raw.subject.cover || out.cover };
+  }
+  return out;
+}
+
 function normalizeSections(data) {
-  return (data.items || []).map((item) => ({
-    name: item.title || "",
-    type: item.type || "",
-    position: item.position ?? 0,
-    items: item.subjects || [],
-    banner: item.banner || null,
-    rankings: item.rankings || [],
-  }));
+  return (data.items || []).map((item) => {
+    // Priority 1: subjects array (standard sections)
+    let items = item.subjects && item.subjects.length ? item.subjects : [];
+
+    // Priority 2: CUSTOM sections keep items in customData.items
+    if (
+      !items.length &&
+      item.type === "CUSTOM" &&
+      item.customData &&
+      item.customData.items
+    ) {
+      items = item.customData.items
+        .map(_normaliseItem)
+        .filter((i) => i && i.subjectId);
+    }
+
+    // Priority 3: BANNER sections keep items inside banner.banners
+    if (
+      !items.length &&
+      item.type === "BANNER" &&
+      item.banner &&
+      item.banner.banners
+    ) {
+      items = item.banner.banners
+        .map((b) => _normaliseItem(b.subject || b))
+        .filter(Boolean);
+    }
+
+    return {
+      name: item.title || "",
+      type: item.type || "",
+      position: item.position ?? 0,
+      items,
+      banner: item.banner || null,
+      rankings: item.rankings || [],
+    };
+  });
 }
 
 function findSection(sections, name) {

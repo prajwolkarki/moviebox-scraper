@@ -482,6 +482,7 @@ app.get("/subtitles/proxy", async (req, res) => {
     });
     res.status(upstream.status);
     res.setHeader("access-control-allow-origin", "*");
+    res.setHeader("access-control-allow-headers", "range");
 
     const isSrt = url.match(/\.srt($|[?#])/i) ||
       (upstream.headers.get("content-type") || "").includes("text/plain");
