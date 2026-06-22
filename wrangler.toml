@@ -1,0 +1,20 @@
+name = "moviebox-stream-proxy"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# Optional: pin to a specific Workers runtime version
+# compatibility_flags = ["nodejs_compat"]
+
+# ── Optional tab-ID overrides ─────────────────────────────────────────────────
+# Uncomment and adjust if the API changes its tab numbering.
+# [vars]
+# TAB_HOME      = "0"
+# TAB_MOVIE     = "1"
+# TAB_TV        = "2"
+# TAB_ANIMATION = "3"
+# TAB_RANKING   = "4"
+
+# ── Secrets (set via CLI, never stored here) ──────────────────────────────────
+# npx wrangler secret put MOVIEBOX_SECRET_KEY_DEFAULT
+# npx wrangler secret put MOVIEBOX_SECRET_KEY_ALT
+# npx wrangler secret put MOVIEBOX_AUTH_TOKEN
