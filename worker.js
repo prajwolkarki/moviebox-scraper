@@ -1788,6 +1788,7 @@ async function handleRequest(request, env) {
 // Workers entry-point
 // =============================================================================
 
+export { handleRequest };
 export default {
   fetch(request, env, ctx) {
     return handleRequest(request, env);
