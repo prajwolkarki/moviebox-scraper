@@ -222,13 +222,13 @@ const SECRET_KEY_DEFAULT_BUILTIN = "76iRl07s0xSN9jqmEWAt79EBJZulIQIsV64FZr2O";
 const SECRET_KEY_ALT_BUILTIN = "Xqn2nnO41/L92o1iuXhSLHTbXvY4Z5ZZ62m8mSLA";
 
 const HOST_POOL = [
+  "https://api.inmoviebox.com",
+  "https://api4sg.aoneroom.com",
+  "https://api6sg.aoneroom.com",
   "https://api6.aoneroom.com",
   "https://api5.aoneroom.com",
   "https://api4.aoneroom.com",
-  "https://api4sg.aoneroom.com",
   "https://api3.aoneroom.com",
-  "https://api6sg.aoneroom.com",
-  "https://api.inmoviebox.com",
 ];
 
 const DEFAULT_API_BASE = HOST_POOL[0];
@@ -241,7 +241,7 @@ const PLAY_INFO_PATH = "/wefeed-mobile-bff/subject-api/play-info";
 const RESOURCE_PATH = "/wefeed-mobile-bff/subject-api/resource";
 const EXT_CAPTIONS_PATH = "/wefeed-mobile-bff/subject-api/get-ext-captions";
 const SIGNATURE_BODY_MAX_BYTES = 102_400;
-const RETRY_STATUS_CODES = new Set([403, 407, 429, 500, 502, 503, 504]);
+const RETRY_STATUS_CODES = new Set([403, 407, 429, 440, 500, 502, 503, 504]);
 const RESULTS_PER_PAGE = 20;
 const VALID_SUBJECT_ID = /^\d{17,21}$/;
 

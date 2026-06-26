@@ -27,13 +27,13 @@ const AUTH_TOKEN = (process.env.MOVIEBOX_AUTH_TOKEN || "").trim() || null;
 // ---------------------------------------------------------------------------
 
 const HOST_POOL = [
+  "https://api.inmoviebox.com",
+  "https://api4sg.aoneroom.com",
+  "https://api6sg.aoneroom.com",
   "https://api6.aoneroom.com",
   "https://api5.aoneroom.com",
   "https://api4.aoneroom.com",
-  "https://api4sg.aoneroom.com",
   "https://api3.aoneroom.com",
-  "https://api6sg.aoneroom.com",
-  "https://api.inmoviebox.com",
 ];
 
 const DEFAULT_API_BASE = HOST_POOL[0];
@@ -63,7 +63,7 @@ const EXT_CAPTIONS_PATH = "/wefeed-mobile-bff/subject-api/get-ext-captions";
 const SIGNATURE_BODY_MAX_BYTES = 102_400;
 
 // HTTP status codes that trigger a retry on the next host
-const RETRY_STATUS_CODES = new Set([403, 407, 429, 500, 502, 503, 504]);
+const RETRY_STATUS_CODES = new Set([403, 407, 429, 440, 500, 502, 503, 504]);
 
 // ---------------------------------------------------------------------------
 // Pagination defaults
